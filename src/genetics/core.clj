@@ -1,17 +1,86 @@
 (ns genetics.core
-  (:import (java.lang Math)))
+  (:require clojure.set
+            [clojure.string :only (lower-case upper-case)]))
+
 
 ;; #Genetic Mapping
 
 (def human-recombination-freq
   "The number of base pairs represented by one centimorgan" 1.0e6)
 
+
+(defn is-dominant?
+  "Returns true iff the provided allele keyword is dominant (i.e., is
+  represented by an upper-case keyword)."
+  [allele]
+  (= (name allele) (clojure.string/upper-case (name allele))))
+
+
+(defn is-recessive?
+  "Returns true iff the provided allele is recessive (i.e., is
+  represented by a lower-case keyword)"
+  [allele]
+  (not (is-dominant? allele)))
+
+
+(defmulti dominant-form
+  "Returns the dominant form of the provided allele."
+  class)
+(defmethod dominant-form String [allele]
+  (keyword (clojure.string/upper-case allele)))
+(defmethod dominant-form clojure.lang.Keyword [allele]
+  (dominant-form (name allele)))
+
+
+(defmulti recessive-form
+  "Returns the recessive form of the provided allele."
+  class)
+(defmethod recessive-form String [allele]
+  (keyword (clojure.string/lower-case allele)))
+(defmethod recessive-form clojure.lang.Keyword [allele]
+  (recessive-form (name allele)))
+
+
+(def progeny
+  { #{:A :B :C} 479
+    #{:a :b :c} 473
+    #{:A :b :c} 15
+    #{:a :B :C} 13
+    #{:A :B :c} 9
+    #{:a :b :C} 9
+    #{:A :b :C} 1
+    #{:a :B :c} 1})
+
+
+(defn find-dominants
+  "Returns the set of dominant alleles in the genotype"
+  [genotype]
+  (set (filter #(is-dominant? %) genotype)))
+
+
+(defn find-recessives
+  "Returns the set of recessives alleles in the genotype"
+  [genotype]
+  (set (filter #(is-recessive? %) genotype)))
+
+
+(defn find-middle-gene
+  [f2]
+  (let [f2-v (sort-by #(nth % 1) (vec f2))
+        [lf1 lf2 & rest] (vec f2-v)
+        lf1-g (nth lf1 0)
+        lf2-g (nth lf2 0)
+       ;; this is still broken. you need to identify which are moving together
+        odd-one-out (clojure.set/difference (find-dominants lf1-g) (find-recessives lf2-g))
+        [middle] (vec odd-one-out)]
+    (name middle)))
+
+
 (defn compute-distance
   "Computes the distance between loci l1 and l2 given the observed
-  genotype frequencies for f2, assuming a cross between a
+  genotype frequencies for f2, assuming a test cross between a
   heterozygote parent and a homozygote parent."
   [l1 l2 population]
-  ; this is not filled in yet
     1.0)
 
 ;; #Population Genetics
@@ -20,14 +89,14 @@
   "Computes the time required for a population to double, given the
   growth rate r."
   [r]
-  (/ log 2) r)
+  (/ (Math/log 2) r))
 
 
 (defn population-growth
   "Computes the size of a population after time t given the growth
   rate r and the initial population size n."
   [n r t]
-  (* n (exp (* r t))))
+  (* n (Math/exp (* r t))))
 
 
 (defn allele-frequency
@@ -72,7 +141,8 @@
 
 
 (defn relative-fitness
-  "Computes the relative fitness of each genotype."
+  "Computes the relative fitness of each genotype, given a map from
+  genotypes to average number of surviving offspring."
   [genotype-fitness]
     (let [max-fitness (apply max (vals genotype-fitness))]
       (zipmap
