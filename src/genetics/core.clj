@@ -23,6 +23,25 @@
   (not (is-dominant? allele)))
 
 
+(defn find-dominants
+  "Returns the set of dominant alleles in the genotype"
+  [genotype]
+  (set (filter #(is-dominant? %) genotype)))
+
+
+(defn find-recessives
+  "Returns the set of recessives alleles in the genotype"
+  [genotype]
+  (set (filter #(is-recessive? %) genotype)))
+
+
+(defn allele-type
+  "Returns :dominant or :recessive depending on the type
+  of the provided allele"
+  [allele]
+  (if (is-dominant? allele) :dominant :recessive))
+
+
 (defmulti dominant-form
   "Returns the dominant form of the provided allele."
   class)
@@ -52,28 +71,24 @@
     #{:a :B :c} 1})
 
 
-(defn find-dominants
-  "Returns the set of dominant alleles in the genotype"
+(defn find-minority-allele-type
+  "Returns the minority allele type and the alleles for the provided
+  genotype"
   [genotype]
-  (set (filter #(is-dominant? %) genotype)))
+  (let [grouped-genotype (group-by allele-type genotype)]
+    (apply min-key #(count (second %)) grouped-genotype)))
 
-
-(defn find-recessives
-  "Returns the set of recessives alleles in the genotype"
+(defn minority-allele-type
+  "Returns the minority allele type for the provided genotype"
   [genotype]
-  (set (filter #(is-recessive? %) genotype)))
+  (first (find-minority-allele-type [genotype])))
 
 
-(defn find-middle-gene
-  [f2]
-  (let [f2-v (sort-by #(nth % 1) (vec f2))
-        [lf1 lf2 & rest] (vec f2-v)
-        lf1-g (nth lf1 0)
-        lf2-g (nth lf2 0)
-       ;; this is still broken. you need to identify which are moving together
-        odd-one-out (clojure.set/difference (find-dominants lf1-g) (find-recessives lf2-g))
-        [middle] (vec odd-one-out)]
-    (name middle)))
+(defn minority-type-alleles
+  "Returns the alleles whose type is in the minority for the provided
+   genotype"
+  [genotype]
+  (second (find-minority-allele-type [genotype])))
 
 
 (defn compute-distance
@@ -81,6 +96,7 @@
   genotype frequencies for f2, assuming a test cross between a
   heterozygote parent and a homozygote parent."
   [l1 l2 population]
+;; to be implemented
     1.0)
 
 ;; #Population Genetics
@@ -165,9 +181,9 @@
   "Calculates the number of years separating 2 sequences given the
   mutation rate mu, the size of the sequences compared, and the number
   of SNPs found."
-  [μ sample-size snps]
-  (let [sample-μ (* μ sample-size)
-        years-per-snp (/ 1 sample-μ)
+  [mu sample-size snps]
+  (let [sample-mu (* mu sample-size)
+        years-per-snp (/ 1 sample-mu)
         divergence (* snps years-per-snp)]
         (/ divergence 2)))
 
