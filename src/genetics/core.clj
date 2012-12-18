@@ -45,8 +45,10 @@
 (defmulti dominant-form
   "Returns the dominant form of the provided allele."
   class)
+
 (defmethod dominant-form String [allele]
   (keyword (clojure.string/upper-case allele)))
+
 (defmethod dominant-form clojure.lang.Keyword [allele]
   (dominant-form (name allele)))
 
@@ -54,8 +56,10 @@
 (defmulti recessive-form
   "Returns the recessive form of the provided allele."
   class)
+
 (defmethod recessive-form String [allele]
   (keyword (clojure.string/lower-case allele)))
+
 (defmethod recessive-form clojure.lang.Keyword [allele]
   (recessive-form (name allele)))
 
@@ -71,12 +75,22 @@
     #{:a :B :c} 1})
 
 
+(defn genotype
+  "Converts a collection of alleles into a genotype map whose keys are
+  the dominant form of the allele and whose values are the allele form
+  present in the provided genotype"
+  [alleles]
+  (into {}
+    (map #(vector (dominant-form %) (allele-type %)) alleles)))
+
+
 (defn find-minority-allele-type
   "Returns the minority allele type and the alleles for the provided
   genotype"
   [genotype]
   (let [grouped-genotype (group-by allele-type genotype)]
     (apply min-key #(count (second %)) grouped-genotype)))
+
 
 (defn minority-allele-type
   "Returns the minority allele type for the provided genotype"
@@ -96,7 +110,11 @@
   genotype frequencies for f2, assuming a test cross between a
   heterozygote parent and a homozygote parent."
   [l1 l2 population]
-;; to be implemented
+    (let [loci (vector (dominant-form l1) (dominant-form l2))
+          pop-size (reduce + (vals population))]
+    ; find the size of the populations where l1 and l2 are not both in
+    ; the parental phase
+      )
     1.0)
 
 ;; #Population Genetics
