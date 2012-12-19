@@ -1,3 +1,3 @@
-(ns genetics.core
+(ns genetics.graph
   (:require clojure.set))
 
