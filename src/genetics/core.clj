@@ -45,8 +45,10 @@
 (defmulti dominant-form
   "Returns the dominant form of the provided allele."
   class)
+
 (defmethod dominant-form String [allele]
   (keyword (clojure.string/upper-case allele)))
+
 (defmethod dominant-form clojure.lang.Keyword [allele]
   (dominant-form (name allele)))
 
@@ -54,50 +56,45 @@
 (defmulti recessive-form
   "Returns the recessive form of the provided allele."
   class)
+
 (defmethod recessive-form String [allele]
   (keyword (clojure.string/lower-case allele)))
+
 (defmethod recessive-form clojure.lang.Keyword [allele]
   (recessive-form (name allele)))
 
 
-(def progeny
-  { #{:A :B :C} 479
-    #{:a :b :c} 473
-    #{:A :b :c} 15
-    #{:a :B :C} 13
-    #{:A :B :c} 9
-    #{:a :b :C} 9
-    #{:A :b :C} 1
-    #{:a :B :c} 1})
+(defn genotype
+  "Converts a collection of alleles into a genotype map whose keys are
+  the dominant form of the allele and whose values are the allele form
+  present in the provided genotype"
+  [alleles]
+  (into {}
+    (map #(vector (dominant-form %) (allele-type %)) alleles)))
 
 
-(defn find-minority-allele-type
-  "Returns the minority allele type and the alleles for the provided
-  genotype"
-  [genotype]
-  (let [grouped-genotype (group-by allele-type genotype)]
-    (apply min-key #(count (second %)) grouped-genotype)))
-
-(defn minority-allele-type
-  "Returns the minority allele type for the provided genotype"
-  [genotype]
-  (first (find-minority-allele-type [genotype])))
-
-
-(defn minority-type-alleles
-  "Returns the alleles whose type is in the minority for the provided
-   genotype"
-  [genotype]
-  (second (find-minority-allele-type [genotype])))
+(defn- same-allele-type
+  "Returns true iff the two loci have the same allele type in the
+  provided genotype."
+  [l1 l2 genotype]
+  (= (l1 (key genotype))
+    (l2 (key genotype))))
 
 
 (defn compute-distance
   "Computes the distance between loci l1 and l2 given the observed
   genotype frequencies for f2, assuming a test cross between a
-  heterozygote parent and a homozygote parent."
+  heterozygote parent and a homozygote parent. The loci are assumed
+  to be keywords representing genes; the population is a map from
+  genotypes to the associated genotype frequency."
   [l1 l2 population]
-;; to be implemented
-    1.0)
+  (let [loci (vector (dominant-form l1) (dominant-form l2))
+        pop-size (float (reduce + (vals population)))]
+    (* (/ (reduce +
+            (map second
+              (filter #(not (same-allele-type l1 l2 %)) population)))
+         pop-size)
+      100)))
 
 ;; #Population Genetics
 
