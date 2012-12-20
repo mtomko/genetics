@@ -1,14 +1,15 @@
 (ns genetics.graph
   (:require clojure.set))
 
-(def g {:a #{:b :c :d} :b {:e :c}})
+(defprotocol Graph
+  (nodes [g] "Returns the nodes that comprise the graph")
+  (add-nodes [g nodes] "Adds the provided nodes to the graph")
+  (has-node? [g node] "Returns true iff the provided node is present in the graph" )
+  (edges [g] "Returns the set of edges contained in the graph" ))
 
-(defn add-node
-  [graph node]
-  (assoc graph node #{}))
-
-(defn add-directed-edge
-  [graph v0 v1]
-  (if (contains? graph v0)
-    (assoc graph (conj (v0 graph) v1))
-    (assoc graph v0 #{v1})))
+(deftype DirectedGraph [nodes edges]
+  Graph
+    (nodes [this] nodes)
+    (add-nodes [this n] (update-in [:nodes] conj n))
+    (has-node? [this n] (contains? nodes n))
+    (edges [this] edges))
