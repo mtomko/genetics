@@ -4,19 +4,47 @@
 (defprotocol Graph
   (nodes [g] "Returns the nodes that comprise the graph")
   (edges [g] "Returns the set of edges contained in the graph")
-  (has-node? [g node] "Returns true iff the provided node is present in the graph" )
-  (adjacent? [g n1 n2] "Returns true iff the provided nodes are adjacent in the graph")
   (adjacencies [g node] "Returns the set of nodes adjacent to the provided node")
-  )
+  (has-node? [g node] "Returns true iff the provided node is present in the graph")
+  (adjacent? [g n1 n2] "Returns true iff the provided nodes are adjacent in the graph"))
 
 (defprotocol WeightedGraph
   (weight [n1 n2] "Returns the weight associated with the edge between the provided nodes"))
 
-(deftype DirectedGraph [adj]
+;; Default implementations
+(defn- nodes-
+  "Default implementation of nodes from Graph protocol"
+  [adj]
+  (set (keys adj)))
+
+(defn- edges-
+  "Default implementation of edges from Graph protocol"
+  [adj]
+  adj)
+
+(defn- has-node?-
+  "Default implementation of has-node? from Graph protocol"
+  [nodes node]
+  (contains? nodes node))
+
+(defn- adjacencies-
+  "Default implementation of adjacencies from Graph protocol"
+  [adj node]
+  (set (get adj node)))
+
+(defn- adjacent?-
+  "Default implementation of adjacent? from Graph protocol"
+  [nodes adjacencies n1 n2]
+  (and
+    (contains? nodes n1)
+    (contains? nodes n2)
+    (contains? (get adjacencies n1) n2)))
+
+(deftype SimpleGraph [adj]
   Graph
-    (nodes [this] (set (keys adj)))
-    (edges [this] adj)
-    (has-node? [this node] (contains? (nodes this) node))
-    (adjacent? [this n1 n2] (and (has-node? this n1)
-                              (contains? (adjacencies this n1) n2)))
-    (adjacencies [this node] (set (get adj node))))
+    (nodes [this] (nodes- adj))
+    (edges [this] (edges- adj))
+    (adjacencies [this node] (adjacencies- adj node))
+    (has-node? [this node] (has-node?- (nodes this) node))
+    (adjacent? [this n1 n2] (adjacent?- (nodes this) adj n1 n2)))
+
