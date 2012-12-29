@@ -3,7 +3,11 @@
         [genetics.graph])
   (:import [genetics.graph SimpleGraph SimpleWeightedGraph]))
 
-(def g (SimpleGraph. {:A #{:B :C} :B #{} :C #{:B} :D #{:B}}))
+(def g (SimpleGraph.
+         {:A #{:B :C}
+          :B #{}
+          :C #{:B}
+          :D #{:B}}))
 
 (deftest test-sgraph
   (is (= #{:A :B :C :D} (nodes g)))
@@ -16,7 +20,9 @@
   (is (= false (adjacent? g :B :C))))
 
 (def wg (SimpleWeightedGraph.
-          {:A {:B 1.2 :C 9.4} :B {:A 1.2} :C {:A 9.4}}))
+          {:A {:B 1.2 :C 9.4}
+           :B {:A 1.2}
+           :C {:A 9.4}}))
 
 (deftest test-swgraph
   (is (= #{:A :B :C} (nodes wg)))

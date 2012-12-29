@@ -1,5 +1,5 @@
 (ns genetics.graph
-  (:require clojure.set))
+  (:use [genetics.heap]))
 
 (defprotocol Graph
   (nodes [g] "Returns the nodes that comprise the graph")
@@ -57,3 +57,27 @@
     (adjacent? [this n1 n2] (adjacent?- (nodes this) wadj n1 n2))
   WeightedGraph
     (weight [this n1 n2] (get (get wadj n1) n2 Double/MAX_VALUE)))
+
+(defn- node-cmp
+  [n1 n2]
+  (min-cmp (val n1) (val n2)))
+
+(defn- kruskal-
+  "Internal implementation of Kruskal's algorithm"
+  [graph tree heap heap-insert heap-remove]
+  {})
+
+(defn- kruskal
+  "Kruskal's algorithm for computing a minimum weight spanning tree for
+  the graph."
+  [graph]
+  (let [[heap-insert heap-remove] (make-heap node-cmp)
+        heap (reduce heap-insert [] (edges graph))
+        tree {}
+        connected #{}]
+      (kruskal- graph tree heap connected heap-insert heap-remove)))
+
+(defn minimum-spanning-tree
+  "Computes a minimum weight spanning tree for the graph."
+  [graph]
+  (kruskal graph))
