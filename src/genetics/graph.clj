@@ -9,7 +9,7 @@
   (adjacent? [g n1 n2] "Returns true iff the provided nodes are adjacent in the graph"))
 
 (defprotocol WeightedGraph
-  (weight [n1 n2] "Returns the weight associated with the edge between the provided nodes"))
+  (weight [g n1 n2] "Returns the weight associated with the edge between the provided nodes"))
 
 ;; Default implementations
 (defn- nodes-
@@ -48,3 +48,12 @@
     (has-node? [this node] (has-node?- (nodes this) node))
     (adjacent? [this n1 n2] (adjacent?- (nodes this) adj n1 n2)))
 
+(deftype SimpleWeightedGraph [wadj]
+  Graph
+    (nodes [this] (nodes- wadj))
+    (edges [this] (edges- wadj))
+    (adjacencies [this node] (set (keys (get wadj node))))
+    (has-node? [this node] (has-node?- (nodes this) node))
+    (adjacent? [this n1 n2] (adjacent?- (nodes this) wadj n1 n2))
+  WeightedGraph
+    (weight [this n1 n2] (get (get wadj n1) n2 Double/MAX_VALUE)))
