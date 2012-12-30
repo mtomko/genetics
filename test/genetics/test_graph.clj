@@ -1,9 +1,9 @@
 (ns genetics.test_graph
   (:use [clojure.test]
         [genetics.graph])
-  (:import [genetics.graph SimpleGraph SimpleWeightedGraph]))
+  (:import [genetics.graph Graph WeightedGraph]))
 
-(def g (SimpleGraph.
+(def g (Graph.
          {:A #{:B :C}
           :B #{}
           :C #{:B}
@@ -19,10 +19,11 @@
   (is (= true (adjacent? g :A :B)))
   (is (= false (adjacent? g :B :C))))
 
-(def wg (SimpleWeightedGraph.
-          {:A {:B 1.2 :C 9.4}
-           :B {:A 1.2}
-           :C {:A 9.4}}))
+(def wt {:A {:B 1.2 :C 9.4}
+         :B {:A 1.2}
+         :C {:A 9.4}})
+
+(def wg (WeightedGraph. wt))
 
 (deftest test-swgraph
   (is (= #{:A :B :C} (nodes wg)))
@@ -33,3 +34,6 @@
   (is (= false (adjacent? wg :B :C)))
   (is (= 1.2 (weight wg :A :B)))
   (is (= Double/MAX_VALUE (weight wg :B :C))))
+
+(deftest test-mst
+  (is (= wt (minimum-spanning-tree wg))))
