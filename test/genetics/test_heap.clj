@@ -1,4 +1,4 @@
-(ns genetics.test_heap
+(ns genetics.test-heap
   (:use [clojure.test]
         [genetics.heap]))
 

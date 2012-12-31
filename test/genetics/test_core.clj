@@ -1,4 +1,4 @@
-(ns genetics.test_core
+(ns genetics.test-core
   (:use [clojure.test]
         [genetics.core]))
 

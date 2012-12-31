@@ -5,13 +5,12 @@
 (defn rotate-1
   "Rotates the first element in the provided sequence to the end "
   [sequence]
-  (concat (rest sequence) (vector (first sequence))))
+  (conj (subvec sequence 1) (first sequence)))
 
 (defn rotate-n
   "Rotates the first n elements in the provided vector to the end"
   [sequence n]
-  (if (> 1 n)  sequence
-    (recur (rotate-1 sequence) (dec n))))
+  (concat (subvec sequence n) (subvec sequence 0 n)))
 
 (defn- all-rotations* 
   "Adds n rotations of the provided sequence to the list of existing rotations"

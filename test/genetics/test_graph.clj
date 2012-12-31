@@ -1,4 +1,4 @@
-(ns genetics.test_graph
+(ns genetics.test-graph
   (:use [clojure.test]
         [genetics.graph])
   (:import [genetics.graph Graph WeightedGraph]))
