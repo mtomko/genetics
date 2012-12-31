@@ -1,5 +1,4 @@
-(ns genetics.graph
-  (:use [genetics.heap]))
+(ns genetics.graph)
 
 (defn- key-set
   "Returns the set of keys in the provided map."
@@ -62,16 +61,17 @@
   IWeightedGraph
     (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
 
+(defrecord WeightedEdge [node1 node2 weight]
+  Comparable
+    (compareTo [this other]
+      (letfn [(make-evec [edge]
+                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
+        (compare (make-evec this) (make-evec other)))))
+
 (defn- edge-seq
   [wadj]
-  ;; this would be more efficient if it could de-dupe
-  ;; [n1 n2] and [n2 n1] edges
   (for [n1 (keys wadj) [n2 weight] (get wadj n1)]
-    [n1 n2 weight]))
-
-(defn- edge-cmp
-  [n1 n2]
-  (min-cmp (n1 2) (n2 2)))
+    (->WeightedEdge n1 n2 weight)))
 
 (defn- kruskal
   "Kruskal's algorithm for computing a minimum weight spanning tree for
@@ -79,23 +79,23 @@
   ([graph]
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
-        edges (edge-seq (edges graph))
-        [heap-insert heap-remove] (make-heap edge-cmp)
-        heap (reduce heap-insert [] edges)
+        edges (apply sorted-set (edge-seq (edges graph)))
         tree {}]
-      (kruskal nodes tree heap heap-insert heap-remove)))
-  ([nodes tree heap heap-insert heap-remove]
-    (cond (empty? heap) {}                ;; in this case, no MST exists
+      (kruskal nodes edges tree)))
+  ([nodes edges tree]
+    (cond (empty? edges) {}               ;; in this case, no MST exists
           (= nodes (key-set tree)) tree   ;; in this case, we've completed the MST
           :else                           ;; check the next smallest edge and continue
-            (let [[n1 n2 w] (heap-peek heap)]
+            (let [edge (first edges)
+                  n1 (:node1 edge)
+                  n2 (:node2 edge)
+                  w (:weight edge)]
               (if (and (contains? tree n1) (contains? tree n2))
-                (recur nodes tree (heap-remove heap) heap-insert heap-remove)
+                (recur nodes (rest edges) tree)
                 ;; adds an edge in both directions, because we test for completion
                 ;; by looking at the nodes in t2 - not ideal, and should be cleaned up
-                (let [new-heap (heap-remove heap)
-                      new-tree (assoc-in (assoc-in tree [n1 n2] w) [n2 n1] w)]
-                  (recur nodes new-tree new-heap heap-insert heap-remove)))))))
+                (let [new-tree (-> tree (assoc-in [n1 n2] w) (assoc-in [n2 n1] w))]
+                  (recur nodes (rest edges) new-tree)))))))
 
 (defn minimum-spanning-tree
   "Computes a minimum weight spanning tree for the graph."

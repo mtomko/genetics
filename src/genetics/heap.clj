@@ -102,20 +102,33 @@
    (heap-remove-by cmp-fn)])
 
 (defn min-cmp
-  "A simple comparison function that returns -1 if v1 is less than v2,
-  0 if they are equal, and 1 if v1 is greater than v2.  Providing this
+  "A simple comparison function that returns -1 if x is less than y,
+  0 if they are equal, and 1 if x is greater than y.  Providing this
   function to heap-insert-with and heap-remove-with will give functions
   for inserting and removing from a min heap."
-  [v1 v2]
-  (cond
-    (= v1 v2) 0
-    (< v1 v2) -1
-    :default 1))
+  [x y]
+  (compare x y))
 
 (defn max-cmp
-  "A simple comparison function that returns -1 if v1 is greater than v2,
-  0 if they are equals and 1 if v1 is less than v2.  Providing this
-  function to heap-insert-with and heap-remove-with wil give functions
+  "A simple comparison function that returns -1 if x is greater than y,
+  0 if they are equals and 1 if x is less than y.  Providing this
+  function to heap-insert-with and heap-remove-with will give functions
   for inserting and removing from a max heap."
-  [v1 v2]
-  (- (min-cmp v1 v2)))
+  [x y]
+  (- (min-cmp x y)))
+
+(def min-heap-insert
+  "Min heap insertion function"
+  (heap-insert-by min-cmp))
+
+(def min-heap-remove
+  "Min heap remove function"
+  (heap-remove-by min-cmp))
+
+(def max-heap-insert
+  "Max heap insertion function"
+  (heap-insert-by max-cmp))
+
+(def max-heap-remove
+  "Max heap remove function"
+  (heap-remove-by max-cmp))
