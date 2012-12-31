@@ -10,7 +10,8 @@
     (is (= [0 2 1 4]          (heap-insert [0 2 1] 4)))
     (is (= [0 2 1 4 3]        (heap-insert [0 2 1 4] 3)))
     (is (= [0 2 1 4 3 2]      (heap-insert [0 2 1 4 3] 2)))
-    (is (= [0 2 0.5 4 3 2 1]  (heap-insert [0 2 1 4 3 2] 0.5)))))
+    (is (= [0 2 0.5 4 3 2 1]  (heap-insert [0 2 1 4 3 2] 0.5)))
+    (is (= [0 2 0.5 4 3 2 1]  (reduce heap-insert [] '(1 2 0 4 3 2 0.5))))))
 
 (deftest heap-remove
   (let [heap-remove (heap-remove-by min-cmp)]
