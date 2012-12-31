@@ -1,6 +1,10 @@
 (ns genetics.graph
   (:use [genetics.heap]))
 
+(defn- key-set
+  "Returns the set of keys in the provided map."
+  [m] (set (keys m)))
+
 (defprotocol IGraph
   (nodes [g] "Returns the nodes that comprise the graph")
   (edges [g] "Returns the set of edges contained in the graph")
@@ -15,7 +19,7 @@
 (defn- nodes-
   "Default implementation of nodes from Graph protocol"
   [adj]
-  (set (keys adj)))
+  (key-set adj))
 
 (defn- edges-
   "Default implementation of edges from Graph protocol"
@@ -52,15 +56,16 @@
   IGraph
     (nodes [this] (nodes- wadj))
     (edges [this] (edges- wadj))
-    (adjacencies [this node] (set (keys (get wadj node))))
+    (adjacencies [this node] (key-set (get wadj node)))
     (has-node? [this node] (has-node?- (nodes this) node))
     (adjacent? [this n1 n2] (adjacent?- (nodes this) wadj n1 n2))
   IWeightedGraph
-    (weight [this n1 n2] (get (get wadj n1) n2 Double/MAX_VALUE)))
+    (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
 
 (defn- edge-seq
   [wadj]
-  ;; this needs to de-dupe [n1 n2] and [n2 n1] edges
+  ;; this would be more efficient if it could de-dupe
+  ;; [n1 n2] and [n2 n1] edges
   (for [n1 (keys wadj) [n2 weight] (get wadj n1)]
     [n1 n2 weight]))
 
@@ -71,17 +76,17 @@
 (defn- kruskal-
   "Internal implementation of Kruskal's algorithm"
   [nodes tree heap heap-insert heap-remove]
-  (cond (empty? heap) tree  ;; in this case, no MST exists
-        (= nodes (set (keys tree))) tree ;; in this case, we've completed the MST
+  (cond (empty? heap) {} ;; in this case, no MST exists
+        (= nodes (key-set tree)) tree ;; in this case, we've completed the MST
         :else
           (let [[n1 n2 w] (heap-peek heap)]
-            (if (or (contains? tree n1) (contains? tree n2))
+            (if (and (contains? tree n1) (contains? tree n2))
               (recur nodes tree (heap-remove heap) heap-insert heap-remove)
-              ;; adds an undirected edge, because we test for completion
+              ;; adds an edge in both directions, because we test for completion
               ;; by looking at the nodes in t2 - not ideal, and should be cleaned up
-              (let [t1 (assoc-in tree [n1 n2] w)
-                    t2 (assoc-in t1 [n2 n1] w)]
-                (recur nodes t2 (heap-remove heap) heap-insert heap-remove))))))
+              (let [new-heap (heap-remove heap)
+                    new-tree (assoc-in (assoc-in tree [n1 n2] w) [n2 n1] w)]
+                (recur nodes new-tree new-heap heap-insert heap-remove))))))
 
 (defn- kruskal
   "Kruskal's algorithm for computing a minimum weight spanning tree for
@@ -98,3 +103,11 @@
   "Computes a minimum weight spanning tree for the graph."
   [graph]
   (kruskal graph))
+
+(defn total-weight
+  "Computes the total weight of the graph. If the graph
+  is undirected and explicitly contains both directed edges,
+  the value returned by this function will be precisely twice
+  the correct value."
+  [graph]
+  (reduce + (mapcat vals (for [[k v] (edges graph)] v))))
