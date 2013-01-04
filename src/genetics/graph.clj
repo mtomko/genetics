@@ -2,11 +2,26 @@
 
 (defn- key-set
   "Returns the set of keys in the provided map."
-  [m] (set (keys m)))
+  [m] (-> m keys set))
+
+(defrecord Edge [node1 node2 weight]
+  Comparable
+    (compareTo [this other]
+      (letfn [(make-evec [edge]
+                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
+        (compare (make-evec this) (make-evec other)))))
+
+(defrecord WeightedEdge [node1 node2 weight]
+  Comparable
+    (compareTo [this other]
+      (letfn [(make-evec [edge]
+                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
+        (compare (make-evec this) (make-evec other)))))
 
 (defprotocol IGraph
   (nodes [g] "Returns the nodes that comprise the graph")
   (edges [g] "Returns the set of edges contained in the graph")
+  (edge-list [g] "Returns a list of records for each edge in the graph")
   (adjacencies [g node] "Returns the set of nodes adjacent to the provided node")
   (has-node? [g node] "Returns true iff the provided node is present in the graph")
   (adjacent? [g n1 n2] "Returns true iff the provided nodes are adjacent in the graph"))
@@ -37,41 +52,58 @@
 
 (defn- def-adjacent?
   "Default implementation of adjacent? from Graph protocol"
-  [nodes adjacencies n1 n2]
-  (and
-    (contains? nodes n1)
-    (contains? nodes n2)
-    (contains? (get adjacencies n1) n2)))
+  [adjacencies n1 n2]
+    (contains? (get adjacencies n1) n2))
+
+(deftype DiGraph [adj]
+  IGraph
+    (nodes [this] (def-nodes adj))
+    (edges [this] (def-edges adj))
+    (edge-list [this]
+      (for [n1 (keys adj) n2 (get adj n1)]
+        (->Edge n1 n2)))
+    (adjacencies [this node] (def-adjacencies adj node))
+    (has-node? [this node] (def-has-node? (nodes this) node))
+    (adjacent? [this n1 n2] (def-adjacent? adj n1 n2)))
 
 (deftype Graph [adj]
   IGraph
     (nodes [this] (def-nodes adj))
     (edges [this] (def-edges adj))
+    (edge-list [this]
+      (let [all-edges (for [n1 (keys adj) n2 (get adj n1)] (vec (sort n1 n2)))]
+        (for [[n1 n2] (set all-edges)]
+           (->Edge n1 n2))))
     (adjacencies [this node] (def-adjacencies adj node))
     (has-node? [this node] (def-has-node? (nodes this) node))
-    (adjacent? [this n1 n2] (def-adjacent? (nodes this) adj n1 n2)))
+    (adjacent? [this n1 n2] (or (def-adjacent? adj n1 n2) (def-adjacent? adj n2 n1))))
+
+(deftype WeightedDiGraph [wadj]
+  IGraph
+    (nodes [this] (def-nodes wadj))
+    (edges [this] (def-edges wadj))
+    (edge-list [this]
+      (for [n1 (keys wadj) [n2 weight] (get wadj n1)]
+        (->WeightedEdge n1 n2 weight)))
+    (adjacencies [this node] (key-set (get wadj node)))
+    (has-node? [this node] (def-has-node? (nodes this) node))
+    (adjacent? [this n1 n2] (def-adjacent? wadj n1 n2))
+  IWeightedGraph
+    (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
 
 (deftype WeightedGraph [wadj]
   IGraph
     (nodes [this] (def-nodes wadj))
     (edges [this] (def-edges wadj))
+    (edge-list [this]
+      (let [all-edges (for [n1 (keys wadj) [n2 weight] (get wadj n1)] (vec (sort n1 n2 weight)))]
+        (for [[n1 n2 weight] (set all-edges)]
+            (->Edge n1 n2 weight))))
     (adjacencies [this node] (key-set (get wadj node)))
     (has-node? [this node] (def-has-node? (nodes this) node))
-    (adjacent? [this n1 n2] (def-adjacent? (nodes this) wadj n1 n2))
+    (adjacent? [this n1 n2] (or (def-adjacent? wadj n1 n2) (def-adjacent? wadj n2 n1)))
   IWeightedGraph
     (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
-
-(defrecord WeightedEdge [node1 node2 weight]
-  Comparable
-    (compareTo [this other]
-      (letfn [(make-evec [edge]
-                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
-        (compare (make-evec this) (make-evec other)))))
-
-(defn- edge-seq
-  [wadj]
-  (for [n1 (keys wadj) [n2 weight] (get wadj n1)]
-    (->WeightedEdge n1 n2 weight)))
 
 (defn- kruskal
   "Kruskal's algorithm for computing a minimum weight spanning tree for
@@ -79,9 +111,11 @@
   ([graph]
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
-        edges (apply sorted-set (edge-seq (edges graph)))
+        edges (apply sorted-set (edge-list graph))
         tree {}]
       (kruskal nodes edges tree)))
+  ;; this recursive implementation could probably be reframed in terms of
+  ;; reduce or some other primitive
   ([nodes edges tree]
     (cond (empty? edges) {}               ;; in this case, no MST exists
           (= nodes (key-set tree)) tree   ;; in this case, we've completed the MST
