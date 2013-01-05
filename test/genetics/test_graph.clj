@@ -34,6 +34,3 @@
   (is (= false (adjacent? wg :B :C)))
   (is (= 1.2 (weight wg :A :B)))
   (is (= Double/MAX_VALUE (weight wg :B :C))))
-
-(deftest test-mst
-  (is (= wt (minimum-spanning-tree wg))))
