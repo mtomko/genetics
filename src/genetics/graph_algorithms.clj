@@ -17,7 +17,7 @@
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
         edges (apply sorted-set-by edge-sort (edge-list graph))
-        forest (into {} (map #(vector % #{%}) nodes)) ;;(map #(vector % (adjacencies graph %)) nodes))
+        forest (into {} (map #(vector % #{%}) nodes))
         tree {}]
       (kruskal nodes edges forest tree)))
   ([nodes edges forest tree]
@@ -31,8 +31,7 @@
         (if (= n1-adj n2-adj)
           (recur nodes (rest edges) forest tree)
           (let [new-adj (union n1-adj n2-adj)
-                ;; this needs to update the forest not just for n1 and n2 but for all members of new-adj
-                new-forest (-> forest (assoc n1 new-adj) (assoc n2 new-adj))
+                new-forest (into forest (map #(vector % new-adj) new-adj))
                 ;; adds an edge in both directions
                 new-tree (-> tree (assoc-in [n1 n2] w) (assoc-in [n2 n1] w))]
             (recur nodes (rest edges) new-forest new-tree)))))))
