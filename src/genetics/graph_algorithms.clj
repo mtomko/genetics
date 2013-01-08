@@ -17,28 +17,25 @@
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
         edges (apply sorted-set-by edge-sort (edge-list graph))
-        forest (into {} (map (fn [x] [x (adjacencies graph x)]) nodes))
+        forest (into {} (map #(vector % #{%}) nodes)) ;;(map #(vector % (adjacencies graph %)) nodes))
         tree {}]
       (kruskal nodes edges forest tree)))
-  ;; this recursive implementation could probably be reframed in terms of
-  ;; reduce or some other primitive
   ([nodes edges forest tree]
-    (cond (empty? edges) {}               ;; in this case, no MST exists
-          :else                           ;; check the next smallest edge and continue
-            (let [edge (first edges)
-                  n1 (:node1 edge)
-                  n2 (:node2 edge)
-                  w (:weight edge)
-                  n1-adj (get forest n1)
-                  n2-adj (get forest n2)]
-              (if (= n1-adj n2-adj)
-                (recur nodes (rest edges) forest tree)
-                ;; adds an edge in both directions, because we test for completion
-                ;; by looking at the nodes in t2 - not ideal, and should be cleaned up
-                (let [new-adj (union n1-adj n2-adj)
-                      new-forest (-> forest (assoc-in [n1] new-adj) (assoc-in [n2] new-adj))
-                      new-tree (-> tree (assoc-in [n1 n2] w) (assoc-in [n2 n1] w))]
-                  (recur nodes (rest edges) new-forest new-tree)))))))
+    (if (empty? edges) tree
+      (let [edge (first edges)
+            n1 (:node1 edge)
+            n2 (:node2 edge)
+            w (:weight edge)
+            n1-adj (get forest n1)
+            n2-adj (get forest n2)]
+        (if (= n1-adj n2-adj)
+          (recur nodes (rest edges) forest tree)
+          (let [new-adj (union n1-adj n2-adj)
+                ;; this needs to update the forest not just for n1 and n2 but for all members of new-adj
+                new-forest (-> forest (assoc n1 new-adj) (assoc n2 new-adj))
+                ;; adds an edge in both directions
+                new-tree (-> tree (assoc-in [n1 n2] w) (assoc-in [n2 n1] w))]
+            (recur nodes (rest edges) new-forest new-tree)))))))
 
 (defn minimum-spanning-tree
   "Computes a minimum weight spanning tree for the graph."
