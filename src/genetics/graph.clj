@@ -93,7 +93,11 @@
     (nodes [this] (def-nodes wadj))
     (edges [this] (def-edges wadj))
     (edge-list [this]
-      (let [all-edges (for [n1 (keys wadj) [n2 weight] (get wadj n1)] (conj (vec (sort [n1 n2])) weight))]
+      (let [all-edges
+           ;; get all adjacencies (n1, n2, w)
+            (for [n1 (keys wadj) [n2 weight] (get wadj n1)]
+              ;; return the vector [n1 n2 w] where n1 < n2
+              (conj (vec (sort [n1 n2])) weight))]
         (for [[n1 n2 weight] (set all-edges)]
             (->Edge n1 n2 weight))))
     (adjacencies [this node] (key-set (get wadj node)))
