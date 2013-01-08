@@ -6,3 +6,6 @@ pom.xml
 .lein-deps-sum
 *iml
 .idea/
+.lein-failures
+
+target/stale/dependencies

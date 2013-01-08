@@ -5,14 +5,14 @@
   Comparable
     (compareTo [this other]
       (letfn [(make-evec [edge]
-                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
+                (vector (:node1 edge) (:node2 edge)))]
         (compare (make-evec this) (make-evec other)))))
 
 (defrecord WeightedEdge [node1 node2 weight]
   Comparable
     (compareTo [this other]
       (letfn [(make-evec [edge]
-                (vector (:weight edge) (:node1 edge) (:node2 edge)))]
+                (vector (:node1 edge) (:node2 edge) (:weight edge)))]
         (compare (make-evec this) (make-evec other)))))
 
 (defprotocol IGraph
@@ -68,7 +68,7 @@
     (nodes [this] (def-nodes adj))
     (edges [this] (def-edges adj))
     (edge-list [this]
-      (let [all-edges (for [n1 (keys adj) n2 (get adj n1)] (vec (sort n1 n2)))]
+      (let [all-edges (for [n1 (keys adj) n2 (get adj n1)] (vec (sort [n1 n2])))]
         (for [[n1 n2] (set all-edges)]
            (->Edge n1 n2))))
     (adjacencies [this node] (def-adjacencies adj node))
@@ -93,7 +93,7 @@
     (nodes [this] (def-nodes wadj))
     (edges [this] (def-edges wadj))
     (edge-list [this]
-      (let [all-edges (for [n1 (keys wadj) [n2 weight] (get wadj n1)] (vec (sort n1 n2 weight)))]
+      (let [all-edges (for [n1 (keys wadj) [n2 weight] (get wadj n1)] (conj (vec (sort [n1 n2])) weight))]
         (for [[n1 n2 weight] (set all-edges)]
             (->Edge n1 n2 weight))))
     (adjacencies [this node] (key-set (get wadj node)))

@@ -1,7 +1,7 @@
 (ns genetics.test-graph
   (:use [clojure.test]
         [genetics.graph])
-  (:import [genetics.graph DiGraph WeightedDiGraph]))
+  (:import [genetics.graph DiGraph WeightedDiGraph WeightedEdge]))
 
 (def g (DiGraph.
          {:A #{:B :C}
@@ -27,6 +27,13 @@
 
 (deftest test-wgraph
   (is (= #{:A :B :C} (nodes wg)))
+  (is (=
+        (list
+          (->WeightedEdge :A :B 1.2)
+          (->WeightedEdge :A :C 9.4)
+          (->WeightedEdge :B :A 1.2)
+          (->WeightedEdge :C :A 9.4))
+        (sort (edge-list wg))))
   (is (= true (has-node? wg :A)))
   (is (= false (has-node? wg :F)))
   (is (= #{:B :C} (adjacencies wg :A)))

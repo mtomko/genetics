@@ -2,20 +2,27 @@
   (:use [genetics.util]
         [genetics.graph]))
 
+(defn- edge-sort
+  [e1 e2]
+    (let [c (compare (:weight e1) (:weight e2))]
+      (if (not= c 0)
+        c
+        (compare e1 e2))))
+
 (defn- kruskal
   "Kruskal's algorithm for computing a minimum weight spanning tree for
   the graph."
   ([graph]
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
-        edges (apply sorted-set (edge-list graph))
+        edges (apply sorted-set-by edge-sort (edge-list graph))
         tree {}]
       (kruskal nodes edges tree)))
   ;; this recursive implementation could probably be reframed in terms of
   ;; reduce or some other primitive
   ([nodes edges tree]
     (cond (empty? edges) {}               ;; in this case, no MST exists
-          (= nodes (key-set tree)) tree   ;; in this case, we've completed the MST
+          (= nodes (key-set tree)) tree   ;; this termination condition is broken!
           :else                           ;; check the next smallest edge and continue
             (let [edge (first edges)
                   n1 (:node1 edge)
