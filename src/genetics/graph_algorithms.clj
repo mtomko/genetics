@@ -21,16 +21,16 @@
         tree {}]
       (kruskal nodes edges forest tree)))
   ([nodes edges forest tree]
-    (if (empty? edges) tree
-      (let [edge (first edges)
-            n1 (:node1 edge)
-            n2 (:node2 edge)
-            w (:weight edge)
+    (if (empty? edges)
+      (if (= nodes (get forest (first nodes)))
+        tree {})
+      (let [[n1 n2 w] (evec (first edges))
             n1-adj (get forest n1)
             n2-adj (get forest n2)]
         (if (= n1-adj n2-adj)
           (recur nodes (rest edges) forest tree)
           (let [new-adj (union n1-adj n2-adj)
+                ;; update the forest to show the trees for each node
                 new-forest (into forest (map #(vector % new-adj) new-adj))
                 ;; adds an edge in both directions
                 new-tree (-> tree (assoc-in [n1 n2] w) (assoc-in [n2 n1] w))]

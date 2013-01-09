@@ -1,21 +1,24 @@
 (ns genetics.graph
   (:use [genetics.util]))
 
-(defrecord Edge [node1 node2 weight]
+(defprotocol PEvec
+  (evec [e]))
+
+(defrecord Edge [node1 node2]
+  PEvec
+  (evec [this] (vector node1 node2))
   Comparable
     (compareTo [this other]
-      (letfn [(make-evec [edge]
-                (vector (:node1 edge) (:node2 edge)))]
-        (compare (make-evec this) (make-evec other)))))
+      (compare (evec this) (evec other))))
 
 (defrecord WeightedEdge [node1 node2 weight]
+  PEvec
+  (evec [this] (vector node1 node2 weight))
   Comparable
     (compareTo [this other]
-      (letfn [(make-evec [edge]
-                (vector (:node1 edge) (:node2 edge) (:weight edge)))]
-        (compare (make-evec this) (make-evec other)))))
+      (compare (evec this) (evec other))))
 
-(defprotocol IGraph
+(defprotocol PGraph
   (nodes [g] "Returns the nodes that comprise the graph")
   (edges [g] "Returns the set of edges contained in the graph")
   (edge-list [g] "Returns a list of records for each edge in the graph")
@@ -23,7 +26,7 @@
   (has-node? [g node] "Returns true iff the provided node is present in the graph")
   (adjacent? [g n1 n2] "Returns true iff the provided nodes are adjacent in the graph"))
 
-(defprotocol IWeightedGraph
+(defprotocol PWeightedGraph
   (weight [g n1 n2] "Returns the weight associated with the edge between the provided nodes"))
 
 ;; Default implementations
@@ -53,7 +56,7 @@
     (contains? (get adjacencies n1) n2))
 
 (deftype DiGraph [adj]
-  IGraph
+  PGraph
     (nodes [this] (def-nodes adj))
     (edges [this] (def-edges adj))
     (edge-list [this]
@@ -64,7 +67,7 @@
     (adjacent? [this n1 n2] (def-adjacent? adj n1 n2)))
 
 (deftype Graph [adj]
-  IGraph
+  PGraph
     (nodes [this] (def-nodes adj))
     (edges [this] (def-edges adj))
     (edge-list [this]
@@ -76,7 +79,7 @@
     (adjacent? [this n1 n2] (or (def-adjacent? adj n1 n2) (def-adjacent? adj n2 n1))))
 
 (deftype WeightedDiGraph [wadj]
-  IGraph
+  PGraph
     (nodes [this] (def-nodes wadj))
     (edges [this] (def-edges wadj))
     (edge-list [this]
@@ -85,11 +88,11 @@
     (adjacencies [this node] (key-set (get wadj node)))
     (has-node? [this node] (def-has-node? (nodes this) node))
     (adjacent? [this n1 n2] (def-adjacent? wadj n1 n2))
-  IWeightedGraph
+  PWeightedGraph
     (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
 
 (deftype WeightedGraph [wadj]
-  IGraph
+  PGraph
     (nodes [this] (def-nodes wadj))
     (edges [this] (def-edges wadj))
     (edge-list [this]
@@ -99,9 +102,9 @@
               ;; return the vector [n1 n2 w] where n1 < n2
               (conj (vec (sort [n1 n2])) weight))]
         (for [[n1 n2 weight] (set all-edges)]
-            (->Edge n1 n2 weight))))
+            (->WeightedEdge n1 n2 weight))))
     (adjacencies [this node] (key-set (get wadj node)))
     (has-node? [this node] (def-has-node? (nodes this) node))
     (adjacent? [this n1 n2] (or (def-adjacent? wadj n1 n2) (def-adjacent? wadj n2 n1)))
-  IWeightedGraph
+  PWeightedGraph
     (weight [this n1 n2] (get-in wadj [n1 n2] Double/MAX_VALUE)))
