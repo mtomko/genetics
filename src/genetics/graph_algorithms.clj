@@ -3,7 +3,8 @@
         [genetics.util]
         [genetics.graph]))
 
-(defn- edge-sort
+(defn- edge-weight-cmp
+  "Orders edges by weight, breaking ties by comparing nodes"
   [e1 e2]
     (let [c (compare (:weight e1) (:weight e2))]
       (if (not= c 0)
@@ -16,7 +17,7 @@
   ([graph]
   ;; initialize the nodes, heap and MST, and then delegate
   (let [nodes (nodes graph)
-        edges (apply sorted-set-by edge-sort (edge-list graph))
+        edges (apply sorted-set-by edge-weight-cmp (edge-list graph))
         forest (into {} (map #(vector % #{%}) nodes))
         tree {}]
       (kruskal nodes edges forest tree)))
